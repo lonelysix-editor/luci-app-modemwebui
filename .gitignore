@@ -6,8 +6,8 @@ Thumbs.db
 *.rej
 *.ipk
 *.zip
-bin/
-build_dir/
-staging_dir/
-tmp/
-logs/
+/bin/
+/build_dir/
+/staging_dir/
+/tmp/
+/logs/
