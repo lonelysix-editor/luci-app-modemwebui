@@ -1,0 +1,13 @@
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+*.orig
+*.rej
+*.ipk
+*.zip
+bin/
+build_dir/
+staging_dir/
+tmp/
+logs/

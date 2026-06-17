@@ -1,0 +1,101 @@
+<%+header%>
+<div class="embedded-web-page" style="margin: 0; padding: 0; box-sizing: border-box;">
+    <iframe 
+        id="embedded-iframe"
+        src="" 
+        style="height: 100vh; border: none;"
+        title="Modem-Webui">
+    </iframe>
+</div>
+
+<style>
+    /* 仅关闭外层滚动（最小改动，不动JS与布局） */
+    html, body,
+    #maincontent, #maincontainer, #content,
+    .main, .main-content {
+        overflow: hidden !important;
+        /* 某些主题需要高度撑满才会生效 */
+        height: 100%;
+    }
+
+    #embedded-iframe {
+        position: fixed;
+        top: 0;
+        left: 240px; 
+        width: calc(100% - 240px); 
+        height: 100vh;
+        border: none;
+        z-index: 9999;
+        transition: left 0.3s, width 0.3s; 
+        /* 隐藏滚动条但仍可滚动（各内核兼容） */
+        scrollbar-width: none;        /* Firefox */
+        -ms-overflow-style: none;     /* IE/Edge legacy */
+    }
+    /* Chrome/Edge/Safari(WebKit/Blink) */
+    #embedded-iframe::-webkit-scrollbar { width: 0 !important; height: 0 !important; }
+
+
+    @media (max-width: 768px) {
+        #embedded-iframe {
+            left: 0; 
+            width: 100%; 
+            top: 58px;
+            height: calc(100vh - 58px);
+        }
+    }
+
+    .embedded-web-page {
+        margin: 0; 
+        padding: 0; 
+        box-sizing: border-box; 
+        position: relative;
+        min-height: 100vh;
+    }
+</style>
+
+<script>
+    function setIframeSrc() {
+        const iframe = document.getElementById('embedded-iframe');
+        if (iframe) {
+            iframe.src = window.location.protocol + "//" + window.location.hostname + ":8001";
+        }
+    }
+
+    function adjustIframePosition() {
+        const iframe = document.getElementById('embedded-iframe'); 
+        const menu = document.getElementById('mainmenu'); 
+
+        if (menu && iframe) {
+            const isMobile = window.innerWidth <= 768;
+            if (isMobile) {
+                iframe.style.left = '0px'; 
+                iframe.style.width = '100%'; 
+            } else {
+                const menuWidth = menu.offsetWidth; 
+                iframe.style.left = `${menuWidth}px`; 
+                iframe.style.width = `calc(100% - ${menuWidth}px)`; 
+            }
+        }
+    }
+
+    window.addEventListener('resize', () => {
+        setTimeout(() => {
+            adjustIframePosition();
+        }, 50);
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        setIframeSrc();
+        adjustIframePosition();
+    });
+
+    const menuElement = document.getElementById('mainmenu');
+    if (menuElement) {
+        const observer = new MutationObserver(() => {
+            adjustIframePosition(); 
+        });
+        observer.observe(menuElement, { attributes: true, childList: true, subtree: true }); 
+    }
+</script>
+
+<%+footer%>
