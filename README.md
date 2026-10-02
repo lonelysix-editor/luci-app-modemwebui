@@ -7,7 +7,7 @@ compiled together with firmware images.
 
 ## Target
 
-This package is intended for ARMv8/aarch64 OpenWrt routers, especially MT7987A
+This package is intended for ARMv8/aarch64 OpenWrt routers,only test on MT7987A
 based devices.
 
 The included `webuiserver` is a prebuilt aarch64 binary, so this package is not
@@ -15,13 +15,7 @@ intended for other CPU architectures.
 
 ## Dependencies
 
-The package depends on:
-
-- `qmodem`
-- `luci-base`
-- `usbutils`
-- `libgcc`
-
+The package needs qmodem ( or qmodem-next )
 `qmodem` provides the ubus interface used by the WebUI backend.
 
 ## Add This Feed
