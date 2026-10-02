@@ -7,13 +7,51 @@ STOP=10
 
 NAME=modemwebui
 
+DEFAULT_LAN_ADDR=192.168.1.1
+
+get_lan_addr() {
+    local lan_addr
+
+    lan_addr=$(uci -q get network.lan.ipaddr 2>/dev/null)
+    [ -n "$lan_addr" ] || lan_addr=$DEFAULT_LAN_ADDR
+
+    echo "$lan_addr"
+}
+
+write_web_config() {
+    local config_file=$1
+    local lan_addr
+    local tmp_file
+
+    [ -f "${config_file}.bak" ] || return 1
+
+    lan_addr=$(get_lan_addr)
+    tmp_file="${config_file}.tmp.$$"
+
+    if ! sed "s/192\.168\.1\.1/$lan_addr/g" "${config_file}.bak" > "$tmp_file"; then
+        rm -f "$tmp_file"
+        return 1
+    fi
+
+    mv -f "$tmp_file" "$config_file"
+}
+
+write_all_web_configs() {
+    local config_file
+
+    for config_file in \
+        /www/webui/webui000/web/config.json \
+        /www/webui/webui5700/web/config.json
+    do
+        [ -f "${config_file}.bak" ] && write_web_config "$config_file"
+    done
+}
+
 replace_and_start() {
-    LAN_ADDR=$(uci get network.lan.ipaddr)
     CONFIG_FILE=$1
     SERVER_PY=$2
 
-    cp -f ${CONFIG_FILE}.bak $CONFIG_FILE
-    sed -i "s/\b192\.168\.1\.1\b/$LAN_ADDR/g" $CONFIG_FILE
+    write_web_config "$CONFIG_FILE"
     start-stop-daemon -S -b -m -p $PIDFILE -x /usr/bin/python3 -- $SERVER_PY
     sleep 1
     rm -rf /tmp/luci-*
@@ -24,9 +62,7 @@ start_service_instance() {
     local CONFIG_FILE=$1
     
     sleep 6
-    LAN_ADDR=$(uci get network.lan.ipaddr)
-    cp -f ${CONFIG_FILE}.bak $CONFIG_FILE
-    sed -i "s/\b192\.168\.1\.1\b/$LAN_ADDR/g" $CONFIG_FILE
+    write_web_config "$CONFIG_FILE"
     
     # 使用procd启动服务，支持自动重启
     # 通过sh -c在webuiserver所在目录执行，使用相对路径启动
@@ -42,6 +78,10 @@ start_service_instance() {
 }
 
 start_service() {
+    # Generate both frontend configs before probing for a modem. This also
+    # restores config.json when only the packaged .bak file is present.
+    write_all_web_configs
+
     retry_times=10
     while [ "$retry_times" -gt 0 ]; do
         lsusb_output=$(lsusb)
@@ -68,6 +108,15 @@ start_service() {
             retry_times=$((retry_times-1))
         fi
     done
+}
+
+service_triggers() {
+    procd_add_reload_trigger network
+}
+
+reload_service() {
+    write_all_web_configs
+    rm -rf /tmp/luci-*
 }
 
 stop_service() {
